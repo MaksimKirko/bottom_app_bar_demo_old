@@ -4,13 +4,18 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.os.Handler;
+import android.support.transition.TransitionManager;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.widget.Toolbar;
 
 public class CustomToolbar extends Toolbar {
 
-    private int inflateCounter = 0;
+    private Handler mHandler = new Handler();
+    private boolean isExpanded = true;
+    private boolean isToggled = false;
+    private int counter = 0;
 
     public CustomToolbar(Context context) {
         super(context);
@@ -39,11 +44,15 @@ public class CustomToolbar extends Toolbar {
         float cropStart = (width / 2) - (cropSize / 2);
         float cropEnd = (width / 2) + (cropSize / 2);
 
+        TransitionManager.beginDelayedTransition(this);
         Path path = new Path();
         path.moveTo(0, 0);
         path.lineTo(cropStart, 0);
-        if (inflateCounter < 2 || inflateCounter % 2 == 0) {
-            path.addCircle(width / 2, 0, cropSize, Path.Direction.CCW);
+
+        if (isExpanded) {
+            path.addCircle(width / 2, 0, cropSize - counter, Path.Direction.CCW);
+        } else {
+            path.addCircle(width / 2, 0, counter, Path.Direction.CCW);
         }
 
         path.moveTo(cropEnd, 0);
@@ -60,6 +69,27 @@ public class CustomToolbar extends Toolbar {
         path.reset();
         path.close();
 
-        inflateCounter++;
+        if (isToggled) {
+            mHandler.post(() -> {
+                if (counter <= cropSize) {
+                    counter += 2;
+                    invalidate();
+                } else {
+                    isExpanded = !isExpanded;
+                    counter = 0;
+                }
+            });
+        }
+    }
+
+    public void toggleView() {
+        isToggled = true;
+        invalidate();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        isToggled = false;
     }
 }
