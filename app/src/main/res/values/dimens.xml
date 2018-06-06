@@ -6,4 +6,5 @@
     <dimen name="size_activity_main_toolbar_fab">42dp</dimen>
     <dimen name="size_activity_main_toolbar_crop">48dp</dimen>
     <dimen name="radius_activity_main_toolbar_crop">28dp</dimen>
+    <dimen name="margin_activity_main_toolbar_fab_end">24dp</dimen>
 </resources>

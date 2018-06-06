@@ -1,6 +1,7 @@
 package com.github.maksimkirko.bottom_app_bar_demo;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -16,21 +17,37 @@ public class CustomToolbar extends Toolbar {
     private boolean isExpanded = true;
     private boolean isToggled = false;
     private int counter = 0;
+    private int startOffset = 0;
+    private int endOffset = 0;
 
-    public CustomToolbar(Context context) {
-        super(context);
+    public boolean isExpanded() {
+        return isExpanded;
     }
 
     public CustomToolbar(Context context, AttributeSet attrs) {
         super(context, attrs);
+        initOffsets(context, attrs, 0);
     }
 
     public CustomToolbar(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+
+        initOffsets(context, attrs, defStyleAttr);
     }
 
     public CustomToolbar(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
+
+        initOffsets(context, attrs, defStyleAttr);
+    }
+
+    private void initOffsets(Context context, AttributeSet attrs, int defStyleAttr) {
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.CustomToolbar, defStyleAttr, 0);
+
+        this.startOffset = a.getDimensionPixelSize(R.styleable.CustomToolbar_startOffset, 0);
+        this.endOffset = a.getDimensionPixelSize(R.styleable.CustomToolbar_endOffset, 0);
+
+        a.recycle();
     }
 
     @Override
@@ -41,8 +58,16 @@ public class CustomToolbar extends Toolbar {
         float height = (float) getHeight();
 
         float cropSize = getResources().getDimensionPixelSize(R.dimen.radius_activity_main_toolbar_crop);
-        float cropStart = (width / 2) - (cropSize / 2);
-        float cropEnd = (width / 2) + (cropSize / 2);
+        float cropStart = 0;
+        float cropEnd = 0;
+
+        if (startOffset == 0 && endOffset > 0) {
+            cropEnd = width - endOffset;
+            cropStart = cropEnd - cropSize;
+        } else {
+            cropStart = startOffset;
+            cropEnd = cropStart + cropSize;
+        }
 
         TransitionManager.beginDelayedTransition(this);
         Path path = new Path();
@@ -50,9 +75,9 @@ public class CustomToolbar extends Toolbar {
         path.lineTo(cropStart, 0);
 
         if (isExpanded) {
-            path.addCircle(width / 2, 0, cropSize - counter, Path.Direction.CCW);
+            path.addCircle(cropStart, 0, cropSize - counter, Path.Direction.CCW);
         } else {
-            path.addCircle(width / 2, 0, counter, Path.Direction.CCW);
+            path.addCircle(cropStart, 0, counter, Path.Direction.CCW);
         }
 
         path.moveTo(cropEnd, 0);
@@ -63,6 +88,7 @@ public class CustomToolbar extends Toolbar {
 
         Paint paint = new Paint();
         paint.setStyle(Paint.Style.FILL);
+        paint.setAntiAlias(true);
         paint.setColor(ContextCompat.getColor(getContext(), R.color.colorPrimary));
 
         canvas.drawPath(path, paint);
@@ -72,7 +98,7 @@ public class CustomToolbar extends Toolbar {
         if (isToggled) {
             mHandler.post(() -> {
                 if (counter <= cropSize) {
-                    counter += 2;
+                    counter += 8;
                     invalidate();
                 } else {
                     isExpanded = !isExpanded;
